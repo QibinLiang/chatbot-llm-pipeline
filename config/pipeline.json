@@ -1,0 +1,64 @@
+{
+  "pipeline": {
+    "name": "text_c客服_mvp",
+    "language": "zh",
+    "format": "答复+依据+生效时间",
+    "response_timeout_ms": 3000
+  },
+  "input": {
+    "normalize": {
+      "trim_spaces": true,
+      "normalize_punct": true
+    },
+    "context": {
+      "max_turns": 4,
+      "min_query_len_for_context": 6,
+      "referential_tokens": ["这个", "那个", "它", "上面", "之前"]
+    }
+  },
+  "cache": {
+    "answer_cache_ttl_sec": 900,
+    "retrieval_cache_ttl_sec": 900,
+    "embedding_cache_ttl_sec": 3600
+  },
+  "retrieval": {
+    "index_source": "data/qa_pairs.jsonl",
+    "filters": {
+      "region": "",
+      "service": ""
+    },
+    "hybrid": {
+      "bm25_top_k": 20,
+      "vector_top_k": 20,
+      "merge_weights": {
+        "vector": 0.6,
+        "bm25": 0.4
+      }
+    }
+  },
+  "rerank": {
+    "enabled": true,
+    "top_k": 5,
+    "intent_boost": 0.1
+  },
+  "confidence_gate": {
+    "min_confidence": 0.55,
+    "min_margin": 0.05,
+    "conflict_reject": true
+  },
+  "llm": {
+    "provider": "openai|qwen",
+    "model": "",
+    "max_output_tokens": 256,
+    "temperature": 0.2,
+    "system_prompt": "你是客服助手，只能基于提供的知识片段回答。\n必须输出固定格式：\n答复：<口语化回答>\n依据：<引用片段摘要1>；<引用片段摘要2(可选)>\n生效时间：\n若证据不足或冲突，必须拒答，不可编造。",
+    "refuse_template": "答复：根据当前资料无法确认该问题的准确答案，建议通过官方渠道获取权威说明。\n依据：未检索到足够相关条款支持\n生效时间："
+  },
+  "guardrails": {
+    "sensitive_keywords": [],
+    "out_of_scope_policy": "refuse"
+  },
+  "observability": {
+    "log_fields": ["request_id", "query", "top_k", "confidence", "latency_ms", "fallback"]
+  }
+}
