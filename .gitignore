@@ -1,0 +1,28 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyd
+*.so
+
+# Virtual environments
+.venv/
+venv/
+.env/
+
+# Environment variables
+.env
+
+# Data and artifacts
+/data/*
+!/data/.gitkeep
+logs/
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+
+.webui_secret_key
+*.out
