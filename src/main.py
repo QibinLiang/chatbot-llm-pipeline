@@ -28,7 +28,7 @@ def main() -> None:
     items = load_qa_pairs(data_path)
     pipeline = ChatPipeline(config, items)
 
-    context: list[Message] = []
+    context: list = []
     print("Chatbot pipeline ready. Type 'exit' to quit.")
     while True:
         user_input = input("you> ").strip()

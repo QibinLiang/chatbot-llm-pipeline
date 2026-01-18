@@ -1,4 +1,4 @@
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Union
 
 from .answerer import build_answer
 from .cache import SimpleTTLCache
@@ -23,7 +23,7 @@ class ChatPipeline:
         self.answer_cache = SimpleTTLCache(cache_cfg.get("answer_cache_ttl_sec", 900))
         self.retrieval_cache = SimpleTTLCache(cache_cfg.get("retrieval_cache_ttl_sec", 900))
 
-    def respond(self, query: str, context: List[Dict[str, str]] | List[Message]) -> AnswerPayload:
+    def respond(self, query: str, context: Union[List[Dict[str, str]], List[Message]]) -> AnswerPayload:
         input_cfg = self.config.get("input", {})
         ctx_cfg = input_cfg.get("context", {})
         referential_tokens = ctx_cfg.get("referential_tokens", [])
@@ -84,7 +84,7 @@ class ChatPipeline:
         return response
 
     @staticmethod
-    def _normalize_context(context: List[Dict[str, str]] | List[Message]) -> List[Message]:
+    def _normalize_context(context: Union[List[Dict[str, str]], List[Message]]) -> List[Message]:
         messages: List[Message] = []
         for msg in context:
             if isinstance(msg, Message):

@@ -1,3 +1,14 @@
-# Add dependencies here, e.g.:
+# Core deps for preprocessing
+pandas
+openpyxl
+
+# Realtime server
+fastapi
+uvicorn
+edge-tts
+faster-whisper
+numpy
+PyYAML
+# Add other dependencies here, e.g.:
 # openai
 # python-dotenv

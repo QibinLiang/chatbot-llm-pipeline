@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Optional
 
 from .types import AnswerPayload
 
@@ -8,7 +8,7 @@ def apply_guardrails(
     refuse_template: str,
     sensitive_keywords: List[str],
     out_of_scope_policy: str,
-) -> AnswerPayload | None:
+) -> Optional[AnswerPayload]:
     if sensitive_keywords:
         for keyword in sensitive_keywords:
             if keyword and keyword in query:
