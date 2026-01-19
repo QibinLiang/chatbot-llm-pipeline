@@ -24,6 +24,11 @@ cp .env.example .env
 - Put secrets in `.env` (not committed).
 - Update `requirements.txt` as dependencies are added.
 
+## Local LLM
+- Default: Qwen2.5-7B-Instruct local inference with INT4 quantization.
+- Configure in `config/pipeline.json` or `config/pipeline.yaml` under `llm`.
+- Dependencies: `torch`, `transformers`, `bitsandbytes`, `accelerate`.
+
 ## Data Preprocessing
 - Convert `data/*.xlsx` conversation logs into `data/qa_pairs.jsonl` expected by `src/main.py`.
 - Usage:

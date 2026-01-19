@@ -1,13 +1,13 @@
 from typing import Any, Dict, List, Union
 
-from .answerer import build_answer
+from .answerer import build_answer, build_llm_prompt
 from .cache import SimpleTTLCache
 from .gate import passes_confidence_gate
 from .guardrails import apply_guardrails
 from .rerank import rerank
 from .retrieval import Retriever
 from .text import contains_referential, normalize_text
-from .types import AnswerPayload, KnowledgeItem, Message
+from .types import AnswerPayload, KnowledgeItem, Message, RetrievalCandidate
 
 
 class ChatPipeline:
@@ -22,6 +22,7 @@ class ChatPipeline:
         cache_cfg = config.get("cache", {})
         self.answer_cache = SimpleTTLCache(cache_cfg.get("answer_cache_ttl_sec", 900))
         self.retrieval_cache = SimpleTTLCache(cache_cfg.get("retrieval_cache_ttl_sec", 900))
+        self._llm = None
 
     def respond(self, query: str, context: Union[List[Dict[str, str]], List[Message]]) -> AnswerPayload:
         input_cfg = self.config.get("input", {})
@@ -78,10 +79,49 @@ class ChatPipeline:
         if not passed:
             return build_answer("", [], self.config.get("llm", {}).get("refuse_template", ""))
 
+        llm_cfg = self.config.get("llm", {})
+        provider = (llm_cfg.get("provider") or "").lower()
+        if provider in {"qwen_local", "qwen-local"}:
+            response = self._respond_with_llm(normalized, reranked, confidence)
+            self.answer_cache.set(combined_query, response)
+            return response
+
         response = build_answer(normalized, reranked, self.config.get("llm", {}).get("refuse_template", ""))
         response.confidence = confidence
         self.answer_cache.set(combined_query, response)
         return response
+
+    def _respond_with_llm(self, query: str, reranked: List[RetrievalCandidate], confidence: float) -> AnswerPayload:
+        llm_cfg = self.config.get("llm", {})
+        model_id = llm_cfg.get("model") or "Qwen/Qwen2.5-7B-Instruct"
+        quantization = llm_cfg.get("quantization", "int4")
+        max_tokens = llm_cfg.get("max_output_tokens", 256)
+        temperature = llm_cfg.get("temperature", 0.2)
+        top_p = llm_cfg.get("top_p", 0.9)
+        system_prompt = llm_cfg.get("system_prompt", "")
+
+        if self._llm is None:
+            from .llm import LocalQwenLLM
+
+            self._llm = LocalQwenLLM(
+                model_id=model_id,
+                quantization=quantization,
+                max_new_tokens=max_tokens,
+                temperature=temperature,
+                top_p=top_p,
+            )
+        prompt = build_llm_prompt(query, reranked)
+        answer_text = self._llm.generate(system_prompt, prompt)
+        if not answer_text:
+            fallback = build_answer(query, reranked, llm_cfg.get("refuse_template", ""))
+            fallback.confidence = confidence
+            return fallback
+        return AnswerPayload(
+            answer=answer_text,
+            citations=[cand.id for cand in reranked],
+            confidence=confidence,
+            fallback=False,
+        )
 
     @staticmethod
     def _normalize_context(context: Union[List[Dict[str, str]], List[Message]]) -> List[Message]:

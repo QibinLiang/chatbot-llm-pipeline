@@ -9,6 +9,10 @@ edge-tts
 faster-whisper
 numpy
 PyYAML
+transformers>=4.41.0
+accelerate
+bitsandbytes
+torch
 # Add other dependencies here, e.g.:
 # openai
 # python-dotenv

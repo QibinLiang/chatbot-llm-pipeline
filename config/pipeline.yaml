@@ -41,10 +41,12 @@ confidence_gate:
   conflict_reject: true
 
 llm:
-  provider: "openai|qwen"
-  model: ""
+  provider: "qwen_local"
+  model: "Qwen/Qwen2.5-7B-Instruct"
+  quantization: "int4"
   max_output_tokens: 256
   temperature: 0.2
+  top_p: 0.9
   system_prompt: |
     你是客服助手，只能基于提供的知识片段回答。
     必须输出固定格式：

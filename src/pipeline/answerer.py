@@ -19,3 +19,13 @@ def build_answer(
         confidence=top.scores.get("final", 0.0),
         fallback=False,
     )
+
+
+def build_llm_prompt(question: str, candidates: List[RetrievalCandidate]) -> str:
+    if not candidates:
+        return question
+    parts = []
+    for idx, cand in enumerate(candidates, start=1):
+        parts.append(f"{idx}. {cand.answer}")
+    evidence = "\n".join(parts)
+    return f"问题：{question}\n\n已检索到的知识片段：\n{evidence}\n\n请基于以上内容作答。"
