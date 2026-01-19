@@ -5,7 +5,7 @@ import json
 from dataclasses import asdict
 from typing import Any, AsyncIterator, Dict, List, Optional
 
-from fastapi import FastAPI, WebSocket, WebSocketDisconnect
+from fastapi import FastAPI, Request, Response, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 
 from ..pipeline import ChatPipeline
@@ -140,6 +140,25 @@ def create_app(config_path: str = "config/pipeline.json", data_path: Optional[st
                         continue
         except WebSocketDisconnect:
             return
+
+    @app.post("/nrt")
+    async def http_non_realtime(request: Request) -> Response:
+        """Non-realtime endpoint:
+        - Client sends full audio (PCM16LE 16kHz mono) as HTTP body.
+        - Server transcribes, calls pipeline, and returns TTS audio (MP3).
+        """
+        audio_bytes = await request.body()
+        if not audio_bytes:
+            return Response(content=b"", media_type="audio/mpeg", status_code=400)
+        text = whisper_asr.transcribe_bytes(audio_bytes)
+        query = (text or "").strip()
+        if not query:
+            return Response(content=b"", media_type="audio/mpeg", status_code=400)
+        response = pipeline.respond(query, [])
+        mp3_chunks: List[bytes] = []
+        async for audio in edge_tts.stream(response.answer):
+            mp3_chunks.append(audio)
+        return Response(content=b"".join(mp3_chunks), media_type="audio/mpeg")
 
     return app
 

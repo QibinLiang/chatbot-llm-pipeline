@@ -46,3 +46,10 @@ cp .env.example .env
   - Send text frame `{ "type": "flush" }` to trigger transcription + response
   - Alternatively send `{ "type": "text", "text": "你好" }` as direct query
   - Server responds with JSON answer, then streams TTS audio frames (MP3) as binary
+
+### Non-realtime audio endpoint
+- HTTP POST: `http://localhost:9000/nrt`
+  - Send full audio as request body: PCM16LE mono, 16kHz
+  - Server responds with TTS audio (MP3)
+- Client example:
+  - `python client.py --url http://127.0.0.1:9000/nrt`
